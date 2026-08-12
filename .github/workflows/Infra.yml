@@ -131,16 +131,17 @@ jobs:
         run: az account show
 
       # ----------------------------------------
-      # Terraform Plan
+      # Terraform Plan - PREPROD
       # ----------------------------------------
-      - name: Terraform Plan
+      - name: Terraform Plan - Pre-Prod
         run: terraform plan -input=false -out=tfplan
+        working-directory: ./environments/preprod
 
       # ----------------------------------------
-      # Upload Terraform Plan
+      # Upload Pre-Prod Plan
       # ----------------------------------------
-      - name: Upload Terraform Plan
+      - name: Upload Pre-Prod Terraform Plan
         uses: actions/upload-artifact@v4
         with:
-          name: terraform-plan
-          path: tfplan
+          name: terraform-preprod-plan
+          path: environments/preprod/tfplan
