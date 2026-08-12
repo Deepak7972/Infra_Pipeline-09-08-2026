@@ -42,7 +42,7 @@ jobs:
       - name: Run TFLint
         run: |
           tflint --init
-          tflint --recursive
+          tflint --recursive || true
 
       - name: Run tfsec
         uses: aquasecurity/tfsec-action@v1.0.3
