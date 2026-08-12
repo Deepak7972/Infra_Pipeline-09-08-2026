@@ -1,4 +1,3 @@
-```yaml
 name: Terraform CI
 
 on:
@@ -85,4 +84,3 @@ jobs:
         with:
           name: terraform-plan
           path: tfplan
-```
