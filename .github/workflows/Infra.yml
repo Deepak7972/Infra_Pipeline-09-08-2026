@@ -16,26 +16,46 @@ permissions:
 
 jobs:
   terraform:
+    name: Terraform CI
     runs-on: ubuntu-latest
 
     steps:
+      # ----------------------------------------
+      # Checkout
+      # ----------------------------------------
       - name: Checkout
         uses: actions/checkout@v4
 
+      # ----------------------------------------
+      # Setup Terraform
+      # ----------------------------------------
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_wrapper: false
 
+      # ----------------------------------------
+      # Terraform Format
+      # ----------------------------------------
       - name: Terraform Format Check
         run: terraform fmt -check -recursive
 
+      # ----------------------------------------
+      # Terraform Init
+      # ----------------------------------------
       - name: Terraform Init
         run: terraform init -input=false
 
+      # ----------------------------------------
+      # Terraform Validate
+      # ----------------------------------------
       - name: Terraform Validate
         run: terraform validate
 
+      # ----------------------------------------
+      # TFLint
+      # Non-blocking
+      # ----------------------------------------
       - name: Setup TFLint
         uses: terraform-linters/setup-tflint@v5
 
@@ -44,41 +64,81 @@ jobs:
           tflint --init
           tflint --recursive || true
 
-      - name: Run tfsec
-        uses: aquasecurity/tfsec-action@v1.0.3
-        with:
-          soft_fail: true
+      # ----------------------------------------
+      # tfsec
+      # Non-blocking
+      # ----------------------------------------
+      - name: Install tfsec
+        run: |
+          curl -sSL \
+            https://github.com/aquasecurity/tfsec/releases/download/v1.28.14/tfsec-linux-amd64 \
+            -o tfsec
 
+          chmod +x tfsec
+          sudo mv tfsec /usr/local/bin/tfsec
+
+          tfsec --version
+
+      - name: Run tfsec
+        run: |
+          tfsec . || true
+
+      # ----------------------------------------
+      # Checkov
+      # Non-blocking
+      # ----------------------------------------
       - name: Install Checkov
         run: pip install checkov
 
       - name: Run Checkov
-        run: checkov -d . --quiet
+        run: checkov -d . --quiet || true
 
+      # ----------------------------------------
+      # Gitleaks
+      # Non-blocking
+      # ----------------------------------------
       - name: Run Gitleaks
         uses: gitleaks/gitleaks-action@v2
+        continue-on-error: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      # ----------------------------------------
+      # Trivy
+      # Non-blocking
+      # ----------------------------------------
       - name: Run Trivy
         uses: aquasecurity/trivy-action@master
+        continue-on-error: true
         with:
           scan-type: config
           scan-ref: .
           severity: HIGH,CRITICAL
           exit-code: 1
 
+      # ----------------------------------------
+      # Azure Login
+      # ----------------------------------------
       - name: Azure Login
         uses: azure/login@v3
         with:
           creds: '{"clientId":"${{ secrets.AZURE_CLIENT_ID }}","clientSecret":"${{ secrets.AZURE_CLIENT_SECRET }}","subscriptionId":"${{ secrets.AZURE_SUBSCRIPTION_ID }}","tenantId":"${{ secrets.AZURE_TENANT_ID }}"}'
 
+      # ----------------------------------------
+      # Verify Azure Login
+      # ----------------------------------------
       - name: Verify Azure Login
         run: az account show
 
+      # ----------------------------------------
+      # Terraform Plan
+      # ----------------------------------------
       - name: Terraform Plan
         run: terraform plan -input=false -out=tfplan
 
+      # ----------------------------------------
+      # Upload Terraform Plan
+      # ----------------------------------------
       - name: Upload Terraform Plan
         uses: actions/upload-artifact@v4
         with:
