@@ -1,3 +1,4 @@
+```yaml
 name: Terraform CI
 
 on:
@@ -19,13 +20,112 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+
+      # --------------------------------------------------
+      # 1. Checkout
+      # --------------------------------------------------
       - name: Checkout
         uses: actions/checkout@v4
 
+      # --------------------------------------------------
+      # 2. Setup Terraform
+      # --------------------------------------------------
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_wrapper: false
+
+      # --------------------------------------------------
+      # 3. Terraform Format Check
+      # --------------------------------------------------
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive
+
+      # --------------------------------------------------
+      # 4. Terraform Init
+      # --------------------------------------------------
+      - name: Terraform Init
+        run: terraform init -input=false
+
+      # --------------------------------------------------
+      # 5. Terraform Validate
+      # --------------------------------------------------
+      - name: Terraform Validate
+        run: terraform validate
+
+      # --------------------------------------------------
+      # 6. TFLint
+      # --------------------------------------------------
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@v5
+
+      - name: Run TFLint
+        run: |
+          tflint --init
+          tflint --recursive
+
+      # --------------------------------------------------
+      # 7. tfsec Security Scan
+      # --------------------------------------------------
+      - name: Run tfsec
+        uses: aquasecurity/tfsec-action@v1.0.3
+        with:
+          soft_fail: false
+
+      # --------------------------------------------------
+      # 8. Checkov Security Scan
+      # --------------------------------------------------
+      - name: Install Checkov
+        run: pip install checkov
+
+      - name: Run Checkov
+        run: checkov -d . --quiet
+
+      # --------------------------------------------------
+      # 9. Gitleaks Secret Scan
+      # --------------------------------------------------
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # --------------------------------------------------
+      # 10. Trivy IaC Security Scan
+      # --------------------------------------------------
+      - name: Run Trivy IaC Scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: config
+          scan-ref: .
+          severity: HIGH,CRITICAL
+          exit-code: 1
+
+      # --------------------------------------------------
+      # 11. Azure Login using Client Secret
+      # --------------------------------------------------
       - name: Azure Login
         uses: azure/login@v3
         with:
           creds: '{"clientId":"${{ secrets.AZURE_CLIENT_ID }}","clientSecret":"${{ secrets.AZURE_CLIENT_SECRET }}","subscriptionId":"${{ secrets.AZURE_SUBSCRIPTION_ID }}","tenantId":"${{ secrets.AZURE_TENANT_ID }}"}'
 
+      # --------------------------------------------------
+      # 12. Verify Azure Login
+      # --------------------------------------------------
       - name: Verify Azure Login
         run: az account show
+
+      # --------------------------------------------------
+      # 13. Terraform Plan
+      # --------------------------------------------------
+      - name: Terraform Plan
+        run: terraform plan -input=false -out=tfplan
+
+      # --------------------------------------------------
+      # 14. Upload Terraform Plan
+      # --------------------------------------------------
+      - name: Upload Terraform Plan
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-plan
+          path: tfplan
+```
