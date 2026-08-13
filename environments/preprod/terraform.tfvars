@@ -49,7 +49,7 @@ vms = {
 
 key_vault = {
   "kv1" = {
-    name                = "kvpreprodapp002xyz" 
+    name                = "kvpreprodapp002xyz"
     location            = "eastus2"
     resource_group_name = "rg-preprod-app-001"
     sku_name            = "standard"
