@@ -26,6 +26,7 @@ module "virtual_machine" {
 }
 
 module "key_vault" {
+  depends_on = [module.resource_group]
   source    = "../../modules/azurerm_key_vault"
   key_vault = var.key_vault
 }
