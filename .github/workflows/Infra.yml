@@ -45,12 +45,14 @@ jobs:
       # ----------------------------------------
       - name: Terraform Init
         run: terraform init -input=false
+        working-directory: ./environments/preprod
 
       # ----------------------------------------
       # Terraform Validate
       # ----------------------------------------
       - name: Terraform Validate
         run: terraform validate
+        working-directory: ./environments/preprod
 
       # ----------------------------------------
       # TFLint
