@@ -39,6 +39,7 @@ jobs:
       # ----------------------------------------
       - name: Terraform Format Check
         run: terraform fmt -check -recursive
+        working-directory: ./environments/preprod
 
       # ----------------------------------------
       # Terraform Init
@@ -65,6 +66,7 @@ jobs:
         run: |
           tflint --init
           tflint --recursive || true
+        working-directory: ./environments/preprod
 
       # ----------------------------------------
       # tfsec
@@ -84,6 +86,7 @@ jobs:
       - name: Run tfsec
         run: |
           tfsec . || true
+        working-directory: ./environments/preprod
 
       # ----------------------------------------
       # Checkov
@@ -94,6 +97,7 @@ jobs:
 
       - name: Run Checkov
         run: checkov -d . --quiet || true
+        working-directory: ./environments/preprod
 
       # ----------------------------------------
       # Gitleaks
@@ -114,7 +118,7 @@ jobs:
         continue-on-error: true
         with:
           scan-type: config
-          scan-ref: .
+          scan-ref: ./environments/preprod
           severity: HIGH,CRITICAL
           exit-code: 1
 
